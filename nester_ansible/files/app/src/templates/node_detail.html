@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard du Nœud</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 30px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h1>Informations du système</h1>
+    <div class="row">
+        <div class="column">
+            <p><b>Système d'exploitation:</b> {{ data.os }} {{ data.os_version }}</p>
+            <p><b>Processeur:</b> {{ data.processor }} ({{ data.architecture }}), {{ data.physical_cores }} cœurs physiques</p>
+            <p><b>Mémoire Totale:</b> {{ data.total_memory }} octets</p>
+            <p><b>Uptime:</b> {{ data.uptime }} secondes</p>
+            <p><b>Adresse MAC:</b> {{ data.mac_address }}</p>
+            <p><b>IP Privée:</b> {{ data.private_ip }}</p>
+            <p><b>IP Publique:</b> {{ data.public_ip }}</p>
+        </div>
+    </div>
+
+    <h2>Espace disque</h2>
+    <div class="chart-container">
+        <canvas id="diskChart"></canvas>
+    </div>
+
+    <h2>Processus</h2>
+    <ul>
+        <li v-for="process in processes" :key="process.pid">[[ process.name ]] (PID: [[ process.pid ]]) - % Mémoire utilisée: [[ process.memory_percent ]]</li>
+    </ul>
+
+    <div class="chart-container">
+        <canvas id="memoryChart"></canvas>
+    </div>
+</div>
+
+<script>
+var fakeData = {{ data | tojson }};
+</script>
+
+<script>
+var app = new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    data: {
+        data: fakeData
+    },
+    computed: {
+        diskData() {
+            const disks = {};
+            Object.keys(this.data).forEach(key => {
+                if (key.includes('Total')) {
+                    const baseKey = key.replace(' Total', '');
+                    disks[baseKey] = {
+                        total: this.data[key],
+                        used: this.data[baseKey + ' Used'],
+                        free: this.data[baseKey + ' Free']
+                    };
+                }
+            });
+            return disks;
+        },
+        processes() {
+            return this.data.processes;
+        }
+    },
+    mounted() {
+        this.createMemoryChart();
+        this.createDiskChart();
+    },
+    methods: {
+        createMemoryChart() {
+            var ctx = document.getElementById('memoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: this.processes.map(process => process.name),
+                    datasets: [{
+                        label: '% Mémoire utilisée',
+                        data: this.processes.map(process => process.memory_percent),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        },
+        createDiskChart() {
+            const diskLabels = Object.keys(this.diskData);
+            const diskUsed = Object.values(this.diskData).map(disk => disk.used);
+            const diskFree = Object.values(this.diskData).map(disk => disk.free);
+
+            var ctx = document.getElementById('diskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: diskLabels,
+                    datasets: [{
+                        label: 'Espace disque utilisé',
+                        data: diskUsed,
+                        backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Espace disque libre',
+                        data: diskFree,
+                        backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(153, 102, 255, 0.2)'],
+                        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                    },
+                },
+            });
+        }
+    }
+});
+</script>
+</body>
+</html>

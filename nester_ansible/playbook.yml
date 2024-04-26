@@ -1,0 +1,53 @@
+---
+- name: Installation et configuration de l'environnement Docker avec une application Flask
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: Installation de Python3
+      apt:
+        name: python3
+        state: present
+
+    - name: Installation de Docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+        update_cache: yes
+
+    - name: Copie des fichiers de l'application
+      copy:
+        src: ./files/app/
+        dest: /opt/nester/
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Construction de l'image Docker
+      command: >
+        docker build
+        --build-arg NESTER_LISTEN_PORT=5000
+        --build-arg FLASK_LISTEN_PORT=8080
+        -t nester_image .
+      args:
+        chdir: /opt/nester/
+
+    - name: Copie du fichier service systemd pour Nester
+      copy:
+        src: ./files/nester.service
+        dest: /etc/systemd/system/nester.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Rechargement des fichiers de configuration systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Activation et démarrage du service Nester
+      systemd:
+        name: nester.service
+        enabled: yes
+        state: started

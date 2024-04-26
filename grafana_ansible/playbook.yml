@@ -1,0 +1,40 @@
+---
+- name: Installer Grafana sur Debian 11
+  hosts: all
+  become: yes
+  tasks:
+    - name: Mise à jour de tous les paquets
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Installation des dépendances nécessaires
+      apt:
+        name:
+          - apt-transport-https
+          - software-properties-common
+          - ca-certificates
+          - curl
+        state: present
+
+    - name: Ajout de la clé du dépôt Grafana
+      apt_key:
+        url: https://packages.grafana.com/gpg.key
+        state: present
+
+    - name: Ajout du dépôt Grafana
+      apt_repository:
+        repo: 'deb https://packages.grafana.com/oss/deb stable main'
+        state: present
+        update_cache: yes
+
+    - name: Installation de Grafana
+      apt:
+        name: grafana
+        state: present
+
+    - name: Démarrage et activation du service Grafana
+      systemd:
+        name: grafana-server
+        enabled: yes
+        state: started

@@ -1,0 +1,13 @@
+[Unit]
+Description=Nester Flask webapp
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/docker run --rm --name nester -p 5000:5000 -p 8080:8080 nester_image
+ExecStop=/usr/bin/docker stop nester
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

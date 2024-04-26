@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connected Clients</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .heartbeat-btn, .nmap-btn {
+            color: white;
+        }
+        .heartbeat-btn {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .nmap-btn {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .heartbeat-btn:hover, .nmap-btn:hover {
+            color: white;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1>Connected Clients</h1>
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Client ID</th>
+                    <th>IP Address</th>
+                    <th>Port</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Details</th>
+                    <th>Send Heartbeat</th>
+                    <th>NMAP</th>
+                    <th>VNC</th>
+                    <th>SSH</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr>
+                    <td>{{ client.id }}</td>
+                    <td>{{ client.ip }}</td>
+                    <td>{{ client.port }}</td>
+                    <td>{{ client.status }}</td>
+                    <td>{{ client.last_active }}</td>
+                    <td><a class="btn btn-info" href="{{ url_for('node_detail', client_id=client.id) }}">View Details</a></td>
+                    <td><a class="btn heartbeat-btn" href="{{ url_for('send_heartbeat', client_id=client.id) }}">Send Heartbeat</a></td>
+                    <td><a class="btn nmap-btn" href="{{ url_for('node_nmap', client_id=client.id) }}">NMAP</a></td>
+                    <td><button onclick="openVNC('{{ client.ip }}')">Open VNC</button></td>
+                    <td><button onclick="openSSH('{{ client.ip }}')">Open SSH</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function openVNC(ip) {
+          var url = `http://192.168.122.17:6080/vnc.html?host=${ip}&port=6082`;
+          window.open(url, '_blank', 'height=600,width=800');
+        }
+    </script>
+    <script>
+        function openSSH(ip) {
+          var url = `https://${ip}:6175/`;
+          window.open(url, '_blank', 'height=600,width=800');
+        }
+    </script>
+</body>
+</html>
